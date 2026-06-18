@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="th">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -66,9 +65,9 @@
     #fileInput { display: none; }
 
     .filter-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
-    .filter-row select { background: var(--card); border: 1px solid var(--border); border-radius: 8px; color: var(--text); padding: 8px 32px 8px 16px; font-size: 13px; font-weight: 500; font-family: 'Inter','Noto Sans Thai',sans-serif; outline: none; cursor: pointer; transition: border-color .2s; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2364748B' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; box-shadow: var(--shadow-sm); }
-    body.dark-mode .filter-row select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2394A3B8' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
-    .filter-row select:focus { border-color: var(--primary); }
+    .filter-row select, .header-right select { background: var(--card); border: 1px solid var(--border); border-radius: 8px; color: var(--text); padding: 8px 32px 8px 16px; font-size: 13px; font-weight: 500; font-family: 'Inter','Noto Sans Thai',sans-serif; outline: none; cursor: pointer; transition: border-color .2s; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2364748B' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; box-shadow: var(--shadow-sm); }
+    body.dark-mode .filter-row select, body.dark-mode .header-right select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2394A3B8' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
+    .filter-row select:focus, .header-right select:focus { border-color: var(--primary); }
     .filter-label { font-size: 14px; font-weight: 500; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; }
     .clear-btn { background: transparent; border: 1px solid transparent; border-radius: 8px; color: var(--muted); padding: 8px 12px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all .2s; }
     .clear-btn:hover { color: var(--text); background: var(--surface); border-color: var(--border); }
@@ -195,6 +194,27 @@
     </div>
   </div>
   <div class="header-right">
+    <div style="display: flex; align-items: center; gap: 8px; margin-right: 8px;">
+      <span class="filter-label" style="font-size: 13px; font-weight: 600;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+        เดือน:
+      </span>
+      <select id="filterMonth" onchange="loadMonthData()">
+        <option value="">-- เลือกเดือน --</option>
+        <option value="January">January</option>
+        <option value="February">February</option>
+        <option value="March">March</option>
+        <option value="April">April</option>
+        <option value="May">May</option>
+        <option value="June">June</option>
+        <option value="July">July</option>
+        <option value="August">August</option>
+        <option value="September">September</option>
+        <option value="October">October</option>
+        <option value="November">November</option>
+        <option value="December">December</option>
+      </select>
+    </div>
     <button id="settingsBtn" class="btn-outline" style="padding:8px;display:flex;align-items:center;justify-content:center;border-radius:50%;width:36px;height:36px;" title="ตั้งค่า (Settings)">
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
     </button>
@@ -207,7 +227,7 @@
     <div class="filter-row">
       <span class="filter-label">
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" y1="4" x2="14" y2="4"/><line x1="10" y1="4" x2="3" y2="4"/><line x1="21" y1="12" x2="12" y2="12"/><line x1="8" y1="12" x2="3" y2="12"/><line x1="21" y1="20" x2="16" y2="20"/><line x1="12" y1="20" x2="3" y2="20"/><line x1="14" y1="2" x2="14" y2="6"/><line x1="8" y1="10" x2="8" y2="14"/><line x1="16" y1="18" x2="16" y2="22"/></svg>
-        Filter:
+        Campaign:
       </span>
       <select id="filterCampaign" onchange="applyFilters()">
         <option value="">ทุก Campaign</option>
@@ -314,7 +334,7 @@
       <div style="display:flex;flex-direction:column;align-items:flex-start;gap:8px;">
         <label id="mainUploadLabel" class="upload-label" for="fileInput" style="width:100%; justify-content:center; padding: 10px 16px; font-size: 13px; transition: all 0.3s;">
           <svg id="mainUploadIcon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          <span id="fileLabel">อัปโหลดไฟล์หลัก</span>
+          <span id="fileLabel">อัปโหลดไฟล์หลัก (แทนการเลือกเดือน)</span>
         </label>
         <input type="file" id="fileInput" accept=".csv,.xlsx,.xls">
         <span id="lastUploadText" style="font-size:12px;color:var(--muted);display:none;">อัปโหลดล่าสุด: <strong id="lastUploadDate"></strong></span>
@@ -327,7 +347,7 @@
       <div class="setting-label">ตั้งค่าลิ้งก์โฆษณา (Ad Links)</div>
       <div class="setting-desc">ใส่ลิ้งก์ปลายทางให้กับ Ad Name ด้านล่าง เพื่อให้สามารถคลิกจากตารางในหน้าแรกได้</div>
       <div id="adLinkInputsContainer" style="display:flex; flex-direction:column; gap:16px; max-height: 400px; overflow-y: auto; padding-right: 8px; margin-bottom: 16px;">
-        <div style="color: var(--muted); font-size: 13px;">(กรุณาอัปโหลดไฟล์หลักก่อน เพื่อดึงรายชื่อ Ad)</div>
+        <div style="color: var(--muted); font-size: 13px;">(กรุณาอัปโหลดไฟล์หลัก หรือเลือกเดือนก่อน เพื่อดึงรายชื่อ Ad)</div>
       </div>
       <button onclick="saveAllAdLinks()" style="width: 100%; background: var(--primary); color: #FFF; border: none; border-radius: 8px; padding: 10px; cursor: pointer; font-weight: 500; font-family: 'Inter','Noto Sans Thai',sans-serif; font-size: 13px; transition: opacity 0.2s;">
         💾 บันทึกการตั้งค่าลิ้งก์
@@ -785,14 +805,70 @@ function applyFilters() {
 
 function clearFilters() {
   document.getElementById('filterCampaign').value = '';
+  // เราไม่เคลียร์ filterMonth เพื่อให้แสดงข้อมูลของเดือนที่โหลดอยู่ปัจจุบัน
   filteredData = [...allData];
   renderAll();
 }
 
-// File upload
+// ─── การดึงไฟล์ด้วย Dropdown เดือน ─────────────────────────────
+async function loadMonthData() {
+  const month = document.getElementById('filterMonth').value;
+  if (!month) return; // ถ้าไม่ได้เลือกให้หยุด
+
+  showStatus(`กำลังดึงข้อมูลของเดือน ${month}...`);
+
+  const csvUrl = `./data/${month}.csv`;
+  const xlsxUrl = `./data/${month}.xlsx`;
+
+  try {
+    // 1. ลองดึงไฟล์ .csv ก่อน
+    let response = await fetch(csvUrl);
+    
+    if (response.ok) {
+      const text = await response.text();
+      Papa.parse(text, {
+        header: true,
+        skipEmptyLines: true,
+        complete: r => {
+          loadData(r.data);
+          showStatus(`✅ โหลดข้อมูล ${month}.csv สำเร็จ`);
+        }
+      });
+      return;
+    }
+
+    // 2. ถ้าไม่พบ .csv ให้ลองดึงไฟล์ .xlsx
+    response = await fetch(xlsxUrl);
+    
+    if (response.ok) {
+      const arrayBuffer = await response.arrayBuffer();
+      const wb = XLSX.read(arrayBuffer, { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, { defval: 0 });
+      loadData(rows);
+      showStatus(`✅ โหลดข้อมูล ${month}.xlsx สำเร็จ`);
+      return;
+    }
+
+    // 3. ถ้าไม่พบไฟล์ทั้งสองนามสกุล
+    showStatus(`❌ ไม่พบไฟล์ ${month}.csv หรือ ${month}.xlsx`);
+    document.getElementById('filterMonth').value = ""; 
+    
+  } catch (error) {
+    console.error('Fetch error:', error);
+    showStatus('❌ เกิดข้อผิดพลาดในการดึงไฟล์: ' + error.message);
+  }
+}
+
+// File upload (Manual)
 document.getElementById('fileInput')?.addEventListener('change', function(e){
   const file = e.target.files[0]; if (!file) return;
   const ext = file.name.split('.').pop().toLowerCase();
+  
+  // Reset month filter if manually uploading a file
+  const monthSelect = document.getElementById('filterMonth');
+  if (monthSelect) monthSelect.value = "";
+
   if (ext==='xlsx'||ext==='xls') {
     const reader = new FileReader();
     reader.onload = function(ev){ const wb=XLSX.read(ev.target.result,{type:'array'}); const ws=wb.Sheets[wb.SheetNames[0]]; loadData(XLSX.utils.sheet_to_json(ws,{defval:0})); };
@@ -838,7 +914,15 @@ function loadData(rows) {
     populateFilters();
     renderAdLinkInputs();
     renderAll();
-    showStatus(`✅ โหลดข้อมูลสำเร็จ: ${allData.length} รายการ`);
+    
+    // ให้แสดง Status Bar สีเขียวเป็นเวลาสั้นๆ โดยไม่บล็อกการทำงานอื่น
+    const msg = `✅ โหลดข้อมูลสำเร็จ: ${allData.length} รายการ`;
+    const bar = document.getElementById('statusBar');
+    if(bar) {
+        bar.textContent = msg; 
+        bar.style.display = 'block';
+        setTimeout(()=>{ bar.style.display='none'; }, 4000);
+    }
     updateUploadDateUI(new Date());
 
     // เปลี่ยนปุ่มอัปโหลดหลักเป็นอัปโหลดแล้วสีเขียว
@@ -932,7 +1016,7 @@ function renderAdLinkInputs() {
   const uniqueAds = [...new Set(allData.map(r => r.ad).filter(ad => ad))].sort();
 
   if (uniqueAds.length === 0) {
-    container.innerHTML = '<div style="color: var(--muted); font-size: 13px;">(กรุณาอัปโหลดไฟล์หลักก่อน เพื่อดึงรายชื่อ Ad)</div>';
+    container.innerHTML = '<div style="color: var(--muted); font-size: 13px;">(กรุณาอัปโหลดไฟล์หลัก หรือเลือกเดือนก่อน เพื่อดึงรายชื่อ Ad)</div>';
     return;
   }
 
