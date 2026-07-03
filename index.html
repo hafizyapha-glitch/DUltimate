@@ -375,9 +375,11 @@
 <script>
 // ─── DATA MANAGEMENT ──────────────────────────────
 function parseObjective(campaign) {
-  if (campaign.includes('Awareness - Chonburi')) return 'Awareness - Chonburi';
-  if (campaign.includes('Awareness')) return 'Awareness';
-  if (campaign.includes('Page Follower')) return 'Page Follower';
+  const lower = campaign.toLowerCase();
+  if (lower.includes('message')) return 'Message';
+  if (lower.includes('engage')) return 'Engage';
+  if (lower.includes('page like') || lower.includes('follower')) return 'Page Like';
+  if (lower.includes('awareness')) return 'Awareness';
   return 'Other';
 }
 
@@ -442,7 +444,6 @@ function renderKPIs() {
   const iconLike = '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>';
   const iconComment = '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
   const iconShare = '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>';
-  const iconSave = '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>';
   const iconCPM = '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18"/><path d="M7 6h1v4"/><line x1="16.71" y1="13.88" x2="17.71" y2="13.88"/></svg>';
   const iconFreq = '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><line x1="3" y1="3" x2="3" y2="21"/><line x1="3" y1="21" x2="21" y2="21"/><polyline points="7 16 11 12 15 14 20 9"/></svg>';
   const iconCPE = '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/><path d="M14.5 9a2 2 0 0 0-2-1h-1a2 2 0 0 0 0 4h1a2 2 0 0 1 0 4h-1a2 2 0 0 1-2-1"/><line x1="12" y1="7" x2="12" y2="9"/><line x1="12" y1="15" x2="12" y2="17"/></svg>';
@@ -462,7 +463,6 @@ function renderKPIs() {
     card('<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>', 'Reactions', totalReactions.toLocaleString(), 'Post reactions', '#F43F5E'),
     card(iconComment, 'Comments', totalComments.toLocaleString(), 'Post comments', '#8B5CF6'),
     card(iconShare, 'Shares', totalShares.toLocaleString(), 'Post shares', 'var(--green)'),
-    card(iconSave, 'Saves', totalSaves.toLocaleString(), 'Post saves', 'var(--accent)'),
     card(iconFreq, 'Frequency', freq.toFixed(2), 'Avg. times reached per person', 'var(--blue)')
   ];
 
@@ -479,7 +479,7 @@ function renderKPIs() {
     <div class="kpi-group-label">Overview</div>
     <div class="kpi-grid row3">${g1.join('')}</div>
     <div class="kpi-group-label">Engagement Breakdown</div>
-    <div class="kpi-grid row5">${g2.join('')}</div>
+    <div class="kpi-grid row4">${g2.join('')}</div>
     <div class="kpi-group-label">Cost Efficiency</div>
     <div class="kpi-grid row6" style="margin-bottom:8px;">${g3.join('')}</div>
     <div style="text-align:right;font-size:11px;color:var(--muted);margin-bottom:8px;">
@@ -488,7 +488,6 @@ function renderKPIs() {
 }
 
 const COLORS = ['#2563EB','#10B981','#F59E0B','#8B5CF6','#F43F5E','#06B6D4','#64748B','#334155'];
-const OBJ_COLORS = { 'Page Follower': '#2563EB', 'Awareness': '#10B981', 'Awareness - Chonburi': '#F59E0B' };
 
 function renderCharts() {
   destroyCharts();
@@ -503,19 +502,18 @@ function renderCharts() {
     return { responsive:true, maintainAspectRatio:false, plugins:{legend:{labels:{color:textColor,font:{family:'Inter,Noto Sans Thai',size:12}}}}, scales:{x:{...axisStyle(),stacked}, y:{...axisStyle(),stacked,title:{display:true,text:yLabel,color:isDark?'#94A3B8':'#6B7280',font:{size:11}}}} };
   }
 
-  // Check if current filtered data is ONLY Page Follower
-  const isPageFollowerOnly = d.length > 0 && d.every(r => r.objective === 'Page Follower');
-  const metricKey = isPageFollowerOnly ? 'fbLikes' : 'reach';
-  const metricLabel = isPageFollowerOnly ? 'Follower' : 'Reach';
+  // Check if current filtered data is ONLY Page Like
+  const isPageLikeOnly = d.length > 0 && d.every(r => r.objective === 'Page Like');
+  const metricKey = isPageLikeOnly ? 'fbLikes' : 'reach';
+  const metricLabel = isPageLikeOnly ? 'Follower' : 'Reach';
   
   // Update Subtitle dynamically
   const demoChartSub = document.getElementById('demoChart').closest('.chart-card').querySelector('.chart-sub');
   if (demoChartSub) {
-    demoChartSub.textContent = isPageFollowerOnly ? 'Follower สะสมแยกตามกลุ่มอายุและเพศ' : 'การเข้าถึง (Reach) สะสมแยกตามกลุ่มอายุและเพศ';
+    demoChartSub.textContent = isPageLikeOnly ? 'Follower สะสมแยกตามกลุ่มอายุและเพศ' : 'การเข้าถึง (Reach) สะสมแยกตามกลุ่มอายุและเพศ';
   }
 
   // Demographics - Reach by Age & Gender
-  const objectives = ['Page Follower','Awareness','Awareness - Chonburi'];
   const agesDemo = ['18-24','25-34','35-44','45-54','55-64','65+'];
   const gendersDemo = ['male', 'female', 'unknown'];
   const genderColorsDemo = ['#3B82F6', '#F43F5E', '#94A3B8'];
@@ -567,7 +565,7 @@ function renderCharts() {
     
     let summaryHtml = `<svg style="flex-shrink:0;margin-top:2px;" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg> <div style="display:flex; flex-direction:column; gap:4px;">`;
     
-    const metricTh = isPageFollowerOnly ? 'Follower' : 'Reach';
+    const metricTh = isPageLikeOnly ? 'Follower' : 'Reach';
     
     summaryHtml += `<span>วิเคราะห์อันดับกลุ่มเป้าหมายเชิงลึก (${metricTh}) <strong>3 อันดับสูงสุด:</strong></span>`;
     
@@ -589,7 +587,7 @@ function renderCharts() {
   const adPieCard = document.getElementById('adPieChart').closest('.chart-card');
   if (adPieCard) {
     adPieCard.querySelector('.chart-title').textContent = `Ad Performance by ${metricLabel}`;
-    adPieCard.querySelector('.chart-sub').textContent = isPageFollowerOnly ? 'สัดส่วน Follower แยกตามชื่อโฆษณา' : 'สัดส่วนการเข้าถึง (Reach) แยกตามชื่อโฆษณา';
+    adPieCard.querySelector('.chart-sub').textContent = isPageLikeOnly ? 'สัดส่วน Follower แยกตามชื่อโฆษณา' : 'สัดส่วนการเข้าถึง (Reach) แยกตามชื่อโฆษณา';
   }
 
   const adMetricGroups = {};
@@ -634,7 +632,7 @@ function renderCharts() {
     
     let adSummaryHtml = `<svg style="flex-shrink:0;margin-top:2px;" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg> <div style="display:flex; flex-direction:column; gap:4px;">`;
     
-    const adMetricTh = isPageFollowerOnly ? 'Follower' : 'Reach';
+    const adMetricTh = isPageLikeOnly ? 'Follower' : 'Reach';
     adSummaryHtml += `<span>โฆษณาที่สร้างผลลัพธ์ (${adMetricTh}) <strong>สูงสุด 3 อันดับแรก:</strong></span>`;
     
     top3Ads.forEach((item, index) => {
@@ -714,8 +712,10 @@ function renderCharts() {
 }
 
 function objBadge(obj) {
-  if (obj==='Page Follower') return `<span class="badge badge-blue">${obj}</span>`;
+  if (obj==='Page Like') return `<span class="badge badge-blue">${obj}</span>`;
   if (obj==='Awareness') return `<span class="badge badge-green">${obj}</span>`;
+  if (obj==='Message') return `<span class="badge badge-purple">${obj}</span>`;
+  if (obj==='Engage') return `<span class="badge badge-amber">${obj}</span>`;
   return `<span class="badge badge-amber">${obj}</span>`;
 }
 
