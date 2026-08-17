@@ -164,6 +164,13 @@
     body.dark-mode .slider { background-color: #334155; }
     body.dark-mode input:checked + .slider { background-color: var(--primary); }
 
+    /* Yearly Table CSS */
+    #yearlyTable th { color: var(--text); font-weight: 600; }
+    #yearlyTable th, #yearlyTable td { text-align: right; }
+    #yearlyTable th:first-child, #yearlyTable td:first-child {
+      text-align: left; position: sticky; left: 0; background: var(--surface); z-index: 2; font-weight: 600; color: var(--text); border-right: 1px solid var(--border);
+    }
+
   @media (max-width: 1200px) {
     .kpi-grid.row6 { grid-template-columns: repeat(3,1fr); }
   }
@@ -282,30 +289,54 @@
       </div>
     </div>
 
+    <!-- Tabbed Tables -->
     <div class="table-card" style="margin-top:24px;">
-      <div class="table-header">
-        <div>
-          <div class="chart-title">Ad Performance</div>
-          <div class="chart-sub" id="tableCount" style="margin-bottom:0;"></div>
+      <div class="tab-bar" style="padding-top: 8px;">
+        <button class="tab-btn active" id="tabBtn-ad" onclick="switchTableTab('ad')">Ad Performance</button>
+        <button class="tab-btn" id="tabBtn-yearly" onclick="switchTableTab('yearly')">Yearly Performance</button>
+      </div>
+
+      <!-- Ad Performance View -->
+      <div id="tabView-ad">
+        <div class="table-header" style="padding-top: 16px;">
+          <div>
+            <div class="chart-sub" id="tableCount" style="margin-bottom:0;"></div>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table>
+            <thead><tr>
+              <th class="sortable" onclick="handleSort('ad')">Ad Name <span class="sort-icon" id="sortIcon-ad"></span></th>
+              <th class="sortable" onclick="handleSort('spend')">Spend (฿) <span class="sort-icon" id="sortIcon-spend"></span></th>
+              <th class="sortable" onclick="handleSort('reach')">Reach <span class="sort-icon" id="sortIcon-reach"></span></th>
+              <th class="sortable" onclick="handleSort('impressions')">Impressions <span class="sort-icon" id="sortIcon-impressions"></span></th>
+              <th class="sortable" onclick="handleSort('leads')">Leads <span class="sort-icon" id="sortIcon-leads"></span></th>
+              <th class="sortable" onclick="handleSort('engagements')">Engagements <span class="sort-icon" id="sortIcon-engagements"></span></th>
+              <th class="sortable" onclick="handleSort('fbLikes')">FB Likes <span class="sort-icon" id="sortIcon-fbLikes"></span></th>
+              <th class="sortable" onclick="handleSort('reactions')">Reactions <span class="sort-icon" id="sortIcon-reactions"></span></th>
+              <th class="sortable" onclick="handleSort('comments')">Comments <span class="sort-icon" id="sortIcon-comments"></span></th>
+              <th class="sortable" onclick="handleSort('shares')">Shares <span class="sort-icon" id="sortIcon-shares"></span></th>
+              <th class="sortable" onclick="handleSort('saves')">Saves <span class="sort-icon" id="sortIcon-saves"></span></th>
+            </tr></thead>
+            <tbody id="tableBody"></tbody>
+          </table>
         </div>
       </div>
-      <div class="table-responsive">
-        <table>
-          <thead><tr>
-            <th class="sortable" onclick="handleSort('ad')">Ad Name <span class="sort-icon" id="sortIcon-ad"></span></th>
-            <th class="sortable" onclick="handleSort('spend')">Spend (฿) <span class="sort-icon" id="sortIcon-spend"></span></th>
-            <th class="sortable" onclick="handleSort('reach')">Reach <span class="sort-icon" id="sortIcon-reach"></span></th>
-            <th class="sortable" onclick="handleSort('impressions')">Impressions <span class="sort-icon" id="sortIcon-impressions"></span></th>
-            <th class="sortable" onclick="handleSort('leads')">Leads <span class="sort-icon" id="sortIcon-leads"></span></th>
-            <th class="sortable" onclick="handleSort('engagements')">Engagements <span class="sort-icon" id="sortIcon-engagements"></span></th>
-            <th class="sortable" onclick="handleSort('fbLikes')">FB Likes <span class="sort-icon" id="sortIcon-fbLikes"></span></th>
-            <th class="sortable" onclick="handleSort('reactions')">Reactions <span class="sort-icon" id="sortIcon-reactions"></span></th>
-            <th class="sortable" onclick="handleSort('comments')">Comments <span class="sort-icon" id="sortIcon-comments"></span></th>
-            <th class="sortable" onclick="handleSort('shares')">Shares <span class="sort-icon" id="sortIcon-shares"></span></th>
-            <th class="sortable" onclick="handleSort('saves')">Saves <span class="sort-icon" id="sortIcon-saves"></span></th>
-          </tr></thead>
-          <tbody id="tableBody"></tbody>
-        </table>
+
+      <!-- Yearly Performance View -->
+      <div id="tabView-yearly" style="display: none;">
+        <div class="table-header" style="padding: 16px 24px; background: var(--surface); border-bottom: 1px solid var(--border); border-radius: 0;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="width: 10px; height: 10px; background: #FFF; border: 1px solid var(--border); border-radius: 1px;"></div>
+            <div style="font-size: 14px; font-weight: 600; color: var(--text);">เปรียบเทียบข้อมูล (Comparison Mode)</div>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table id="yearlyTable">
+            <thead id="yearlyTableHead"></thead>
+            <tbody id="yearlyTableBody"></tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
@@ -401,7 +432,7 @@ let charts = {};
 
 function destroyCharts() { Object.values(charts).forEach(c => { if(c) c.destroy(); }); charts = {}; }
 function fmt(n) { if(n>=1000000) return (n/1000000).toFixed(1)+'M'; if(n>=1000) return (n/1000).toFixed(1)+'K'; return n.toLocaleString(); }
-function renderAll() { renderKPIs(); renderCharts(); renderTable(); }
+function renderAll() { renderKPIs(); renderCharts(); renderYearlyTable(); renderTable(); }
 
 function renderKPIs() {
   const d = filteredData;
@@ -728,6 +759,109 @@ window.handleSort = function(col) {
   renderTable();
 };
 
+window.switchTableTab = function(tab) {
+  document.getElementById('tabBtn-ad').classList.remove('active');
+  document.getElementById('tabBtn-yearly').classList.remove('active');
+  document.getElementById('tabView-ad').style.display = 'none';
+  document.getElementById('tabView-yearly').style.display = 'none';
+
+  if (tab === 'ad') {
+    document.getElementById('tabBtn-ad').classList.add('active');
+    document.getElementById('tabView-ad').style.display = 'block';
+  } else {
+    document.getElementById('tabBtn-yearly').classList.add('active');
+    document.getElementById('tabView-yearly').style.display = 'block';
+  }
+};
+
+function renderYearlyTable() {
+  const d = filteredData;
+  if (!d || d.length === 0) {
+    document.getElementById('yearlyTableHead').innerHTML = '';
+    document.getElementById('yearlyTableBody').innerHTML = '<tr><td colspan="2" style="text-align:center;">ไม่มีข้อมูล</td></tr>';
+    return;
+  }
+
+  // 1. จัดกลุ่มข้อมูลตามเดือน
+  const monthGroups = {};
+  const monthOrder = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  
+  d.forEach(r => {
+    const m = r.month || 'Total';
+    if (!monthGroups[m]) {
+      monthGroups[m] = { spend: 0, reach: 0, impressions: 0, engagements: 0, messages: 0 };
+    }
+    monthGroups[m].spend += r.spend;
+    monthGroups[m].reach += r.reach;
+    monthGroups[m].impressions += r.impressions;
+    monthGroups[m].engagements += r.engagements;
+    monthGroups[m].messages += (r.messages || 0);
+  });
+
+  // 2. เรียงลำดับเดือน (ซ่อน Total เพื่อให้เหมือนกราฟรายเดือนเป๊ะๆ)
+  const availableMonths = Object.keys(monthGroups).filter(m => m !== 'Total').sort((a, b) => {
+    let indexA = monthOrder.indexOf(a);
+    let indexB = monthOrder.indexOf(b);
+    if (indexA === -1) indexA = 999;
+    if (indexB === -1) indexB = 999;
+    return indexA - indexB;
+  });
+
+  // 3. สร้าง Thead
+  let theadHtml = `<tr><th>Metric</th>`;
+  availableMonths.forEach(m => {
+    theadHtml += `<th>${m}</th>`;
+  });
+  theadHtml += `</tr>`;
+  document.getElementById('yearlyTableHead').innerHTML = theadHtml;
+
+  // 4. เตรียม Metric ตามรูปภาพ
+  const formatDec = (v) => v.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+  const formatNum = (v) => v.toLocaleString();
+
+  const metrics = [
+    { key: 'spend', label: 'Spending (฿)', fmt: formatDec },
+    { key: 'reach', label: 'Reach', fmt: formatNum },
+    { key: 'impressions', label: 'Impression', fmt: formatNum },
+    { key: 'engagements', label: 'Post Engagement', fmt: formatNum },
+    { key: 'messages', label: 'Message', fmt: formatNum },
+    { key: 'frequency', label: 'Frequency', fmt: formatDec },
+    { key: 'cpr', label: 'Cost per 1,000 Reach (CPR)', fmt: formatDec },
+    { key: 'cpm', label: 'Cost per 1,000 impressions (CPM)', fmt: formatDec },
+    { key: 'cpe', label: 'Cost per engagement (CPE)', fmt: formatDec },
+    { key: 'cpmsg', label: 'Cost per Message(CPMsg)', fmt: formatDec }
+  ];
+
+  // 5. สร้าง Tbody
+  let tbodyHtml = '';
+  metrics.forEach(metric => {
+    tbodyHtml += `<tr>`;
+    tbodyHtml += `<td>${metric.label}</td>`;
+    
+    availableMonths.forEach(m => {
+      const data = monthGroups[m];
+      let val = 0;
+      
+      if (metric.key === 'spend') val = data.spend;
+      else if (metric.key === 'reach') val = data.reach;
+      else if (metric.key === 'impressions') val = data.impressions;
+      else if (metric.key === 'engagements') val = data.engagements;
+      else if (metric.key === 'messages') val = data.messages;
+      else if (metric.key === 'frequency') val = data.reach > 0 ? (data.impressions / data.reach) : 0;
+      else if (metric.key === 'cpr') val = data.reach > 0 ? (data.spend / data.reach) * 1000 : 0;
+      else if (metric.key === 'cpm') val = data.impressions > 0 ? (data.spend / data.impressions) * 1000 : 0;
+      else if (metric.key === 'cpe') val = data.engagements > 0 ? (data.spend / data.engagements) : 0;
+      else if (metric.key === 'cpmsg') val = data.messages > 0 ? (data.spend / data.messages) : 0;
+
+      tbodyHtml += `<td class="num">${metric.fmt(val)}</td>`;
+    });
+    
+    tbodyHtml += `</tr>`;
+  });
+
+  document.getElementById('yearlyTableBody').innerHTML = tbodyHtml;
+}
+
 function renderTable() {
   let d = filteredData;
   
@@ -905,6 +1039,7 @@ function loadData(rows) {
         ad: r['Ad name']||r['ad']||'',
         age: r['Age']||r['age']||'',
         gender: r['Gender']||r['gender']||'',
+        month: r['Month'] || r['month'] || document.getElementById('filterMonth').value || 'Total', // เก็บข้อมูลเดือน
         spend: parseFloat(r['Amount spent (THB)']||r['spend']||0)||0,
         reach: parseInt(r['Reach']||0)||0,
         impressions: parseInt(r['Impressions']||0)||0,
