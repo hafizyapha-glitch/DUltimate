@@ -212,8 +212,9 @@
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
             เดือน:
           </span>
-          <select id="filterMonth" onchange="loadMonthData()">
-            <option value="">-- เลือกเดือน --</option>
+          <!-- ปรับให้ Dropdown เป็นแค่ Filter แทนที่จะโหลดไฟล์ใหม่ -->
+          <select id="filterMonth" onchange="applyFilters()">
+            <option value="">-- รวมทุกเดือน --</option>
             <option value="January">January</option>
             <option value="February">February</option>
             <option value="March">March</option>
@@ -970,68 +971,96 @@ function applyFilters() {
 function clearFilters() {
   document.getElementById('filterCampaign').value = '';
   document.getElementById('filterObjective').value = '';
-  // ไม่เคลียร์ filterMonth เพื่อให้อยู่ในเดือนปัจจุบัน
+  document.getElementById('filterMonth').value = '';
   applyFilters();
 }
 
-// ─── การดึงไฟล์ด้วย Dropdown เดือน ─────────────────────────────
-async function loadMonthData() {
-  const month = document.getElementById('filterMonth').value;
-  if (!month) {
-    applyFilters();
-    return; 
+// ─── การดึงไฟล์รายเดือนจากโฟลเดอร์อัตโนมัติ (ดึงทุกเดือนรวมกัน) ─────────────────────────────
+async function loadAllLocalFiles() {
+  const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  let combinedRows = [];
+  let loadedCount = 0;
+  
+  const bar = document.getElementById('statusBar');
+  if(bar) {
+    bar.textContent = 'กำลังโหลดข้อมูลทุกเดือน...'; 
+    bar.style.display = 'block';
   }
 
-  // เช็คว่ามีข้อมูล Master (หลายเดือน) โหลดอยู่แล้วหรือไม่
-  // ถ้ามี หรือเป็นการอัปโหลดไฟล์รวมมาเอง ให้ใช้ applyFilters กรองข้อมูลในหน่วยความจำแทน (ไม่ดึงไฟล์ใหม่)
-  const distinctMonths = [...new Set(allData.map(r => r.month).filter(m => m && m !== 'Total'))];
-  if (window.isMasterDataLoaded || distinctMonths.length > 1) {
-    applyFilters();
-    return;
+  for (const month of months) {
+    try {
+      // 1. ลองดึงไฟล์ .csv ก่อน
+      let res = await fetch(`./data/${month}.csv`);
+      if (res.ok) {
+        const text = await res.text();
+        const parsed = Papa.parse(text, {header: true, skipEmptyLines: true});
+        // แปะ tag เดือนเข้าไปในข้อมูล
+        parsed.data.forEach(r => { r['__autoMonth'] = month; });
+        combinedRows = combinedRows.concat(parsed.data);
+        loadedCount++;
+        continue;
+      }
+      // 2. ถ้าไม่พบ .csv ลองดึง .xlsx
+      res = await fetch(`./data/${month}.xlsx`);
+      if (res.ok) {
+        const arrayBuffer = await res.arrayBuffer();
+        const wb = XLSX.read(arrayBuffer, { type: 'array' });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(ws, { defval: 0 });
+        rows.forEach(r => { r['__autoMonth'] = month; });
+        combinedRows = combinedRows.concat(rows);
+        loadedCount++;
+      }
+    } catch(e) {
+      // ข้ามเดือนที่เกิด error หรือไม่พบไฟล์ไป
+    }
   }
 
-  showStatus(`กำลังดึงข้อมูลของเดือน ${month}...`);
-
-  const csvUrl = `./data/${month}.csv`;
-  const xlsxUrl = `./data/${month}.xlsx`;
-
-  try {
-    // 1. ลองดึงไฟล์ .csv ก่อน
-    let response = await fetch(csvUrl);
+  if (loadedCount > 0) {
+    // นำข้อมูลดิบที่ดึงมาได้ทั้งหมด มาทำการ map โครงสร้างข้อมูลใหม่เข้า allData
+    allData = combinedRows.map(r => {
+      const campaign = r['Campaign name'] || r['campaign'] || '';
+      return {
+        campaign,
+        ad: r['Ad name'] || r['ad'] || '',
+        age: r['Age'] || r['age'] || '',
+        gender: r['Gender'] || r['gender'] || '',
+        month: r['Month'] || r['month'] || r['__autoMonth'] || 'Total', // ยึดเดือนอัตโนมัติเป็นหลักหากในไฟล์ไม่มีคอลัมน์ Month
+        spend: parseFloat(r['Amount spent (THB)'] || r['spend'] || 0) || 0,
+        reach: parseInt(r['Reach'] || 0) || 0,
+        impressions: parseInt(r['Impressions'] || 0) || 0,
+        leads: parseInt(r['Leads'] || r['leads'] || r['Results'] || 0) || 0,
+        engagements: parseInt(r['Post engagements'] || 0) || 0,
+        messages: parseInt(r['Messaging conversations started'] || r['New messaging conversations'] || r['Messages'] || r['messages'] || 0) || 0,
+        fbLikes: parseInt(r['Facebook likes'] || 0) || 0,
+        reactions: parseInt(r['Post reactions'] || 0) || 0,
+        comments: parseInt(r['Post comments'] || 0) || 0,
+        shares: parseInt(r['Post shares'] || 0) || 0,
+        saves: parseInt(r['Post saves'] || 0) || 0,
+        objective: parseObjective(campaign)
+      };
+    }).filter(r => r.ad && r.ad !== '-');
     
-    if (response.ok) {
-      const text = await response.text();
-      Papa.parse(text, {
-        header: true,
-        skipEmptyLines: true,
-        complete: r => {
-          loadData(r.data);
-          showStatus(`✅ โหลดข้อมูล ${month}.csv สำเร็จ`);
-        }
-      });
-      return;
+    filteredData = [...allData];
+    populateFilters();
+    renderAdLinkInputs();
+    applyFilters();
+    
+    if(bar) {
+      bar.textContent = `✅ โหลดข้อมูลครบ ${loadedCount} เดือน สำเร็จ (${allData.length} รายการ)`; 
+      setTimeout(()=>{ bar.style.display='none'; }, 4000);
     }
-
-    // 2. ถ้าไม่พบ .csv ให้ลองดึงไฟล์ .xlsx
-    response = await fetch(xlsxUrl);
     
-    if (response.ok) {
-      const arrayBuffer = await response.arrayBuffer();
-      const wb = XLSX.read(arrayBuffer, { type: 'array' });
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(ws, { defval: 0 });
-      loadData(rows);
-      showStatus(`✅ โหลดข้อมูล ${month}.xlsx สำเร็จ`);
-      return;
+    try {
+      localStorage.setItem('hiaLhomDashboardData', JSON.stringify(allData));
+      localStorage.setItem('hiaLhomUploadDate', new Date().toISOString());
+    } catch(e) {}
+    
+    updateUploadDateUI(new Date());
+  } else {
+    if(bar) {
+       bar.style.display='none';
     }
-
-    // 3. ถ้าไม่พบไฟล์ทั้งสองนามสกุล
-    showStatus(`❌ ไม่พบไฟล์ ${month}.csv หรือ ${month}.xlsx`);
-    document.getElementById('filterMonth').value = ""; 
-    
-  } catch (error) {
-    console.error('Fetch error:', error);
-    showStatus('❌ เกิดข้อผิดพลาดในการดึงไฟล์: ' + error.message);
   }
 }
 
@@ -1058,6 +1087,7 @@ document.getElementById('fileInput')?.addEventListener('change', function(e){
 
 function loadData(rows) {
   try {
+    const selectedMonth = document.getElementById('filterMonth').value;
     allData = rows.map(r=>{
       const campaign = r['Campaign name']||r['campaign']||'';
       return {
@@ -1065,7 +1095,7 @@ function loadData(rows) {
         ad: r['Ad name']||r['ad']||'',
         age: r['Age']||r['age']||'',
         gender: r['Gender']||r['gender']||'',
-        month: r['Month'] || r['month'] || document.getElementById('filterMonth').value || 'Total', // เก็บข้อมูลเดือน
+        month: r['Month'] || r['month'] || selectedMonth || 'Total',
         spend: parseFloat(r['Amount spent (THB)']||r['spend']||0)||0,
         reach: parseInt(r['Reach']||0)||0,
         impressions: parseInt(r['Impressions']||0)||0,
@@ -1287,8 +1317,8 @@ try {
   if (savedDate) updateUploadDateUI(new Date(savedDate));
 } catch(e) {}
 
-// สั่งให้ระบบเช็คหาไฟล์เดือนล่าสุดและดึงข้อมูลขึ้นมาแสดงอัตโนมัติ
-autoLoadLatestMonth();
+// สั่งให้ระบบวิ่งดึงไฟล์ทุกเดือนจากโฟลเดอร์มารวมกันทันที
+loadAllLocalFiles();
 
 </script>
 </body>
