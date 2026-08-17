@@ -791,14 +791,16 @@ function renderYearlyTable() {
   // เติมข้อมูลลงในกลุ่มเดือน
   d.forEach(r => {
     let m = r.month ? r.month.trim() : 'Total';
-    // ทำให้เดือนขึ้นต้นด้วยตัวพิมพ์ใหญ่เสมอ เพื่อให้ตรงกับ Key ของ monthGroups
+    
+    // ทำให้เดือนขึ้นต้นด้วยตัวพิมพ์ใหญ่เสมอ
     if (m.toLowerCase() !== 'total') {
         m = m.charAt(0).toUpperCase() + m.slice(1).toLowerCase();
     } else {
         m = 'Total';
     }
     
-    if (monthGroups[m]) {
+    // 1. นำข้อมูลไปบวกเข้าช่องเดือนนั้นๆ
+    if (monthGroups[m] && m !== 'Total') {
        monthGroups[m].spend += r.spend;
        monthGroups[m].reach += r.reach;
        monthGroups[m].impressions += r.impressions;
@@ -807,6 +809,15 @@ function renderYearlyTable() {
        monthGroups[m].fbLikes += r.fbLikes;
        monthGroups[m].leads += (r.leads || 0);
     }
+    
+    // 2. นำข้อมูลไปบวกสมทบเข้าช่อง Total เสมอ
+    monthGroups['Total'].spend += r.spend;
+    monthGroups['Total'].reach += r.reach;
+    monthGroups['Total'].impressions += r.impressions;
+    monthGroups['Total'].engagements += r.engagements;
+    monthGroups['Total'].messages += (r.messages || 0);
+    monthGroups['Total'].fbLikes += r.fbLikes;
+    monthGroups['Total'].leads += (r.leads || 0);
   });
 
   // 2. รายชื่อเดือนที่จะแสดง (12 เดือน + Total เสมอ)
@@ -836,7 +847,9 @@ function renderYearlyTable() {
     { key: 'cpr', label: 'Cost per 1,000 Reach (CPR)', fmt: formatDec },
     { key: 'cpm', label: 'Cost per 1,000 impressions (CPM)', fmt: formatDec },
     { key: 'cpe', label: 'Cost per engagement (CPE)', fmt: formatDec },
-    { key: 'cpmsg', label: 'Cost per Message(CPMsg)', fmt: formatDec }
+    { key: 'cpmsg', label: 'Cost per Message(CPMsg)', fmt: formatDec },
+    { key: 'cppl', label: 'Cost per page like', fmt: formatDec },
+    { key: 'cpl', label: 'Cost per Leads', fmt: formatDec }
   ];
 
   // 5. สร้าง Tbody
@@ -861,8 +874,10 @@ function renderYearlyTable() {
       else if (metric.key === 'cpm') val = data.impressions > 0 ? (data.spend / data.impressions) * 1000 : 0;
       else if (metric.key === 'cpe') val = data.engagements > 0 ? (data.spend / data.engagements) : 0;
       else if (metric.key === 'cpmsg') val = data.messages > 0 ? (data.spend / data.messages) : 0;
+      else if (metric.key === 'cppl') val = data.fbLikes > 0 ? (data.spend / data.fbLikes) : 0;
+      else if (metric.key === 'cpl') val = data.leads > 0 ? (data.spend / data.leads) : 0;
 
-      const cellClass = ['spend','frequency','cpr','cpm','cpe','cpmsg'].includes(metric.key) ? 'cost-cell' : 'num';
+      const cellClass = ['spend','frequency','cpr','cpm','cpe','cpmsg','cppl','cpl'].includes(metric.key) ? 'cost-cell' : 'num';
       tbodyHtml += `<td class="${cellClass}">${metric.fmt(val)}</td>`;
     });
     
