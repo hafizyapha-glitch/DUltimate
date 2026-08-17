@@ -126,12 +126,19 @@
     .badge-amber { background: rgba(245,158,11,0.1); color: var(--accent); }
     .badge-purple { background: rgba(139,92,246,0.1); color: #8B5CF6; }
     .num { font-family: 'Inter',sans-serif; font-variant-numeric: tabular-nums; }
-    .cost-cell { font-weight: 600; font-family: 'Inter',sans-serif; color: var(--text); }
+    .cost-cell { font-family: 'Inter',sans-serif; color: var(--text); } /* Removed font-weight: 600 */
 
     .tab-bar { display: flex; gap: 8px; border-bottom: 1px solid var(--border); padding: 0 24px; }
     .tab-btn { background: transparent; border: none; color: var(--text-secondary); font-family: 'Inter','Noto Sans Thai',sans-serif; font-size: 14px; font-weight: 500; padding: 12px 16px; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color .2s, border-color .2s; }
     .tab-btn:hover { color: var(--text); }
     .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+    /* Yearly Table CSS */
+    #yearlyTable th { color: var(--text); font-weight: 600; text-align: center; } /* Add center alignment for headers */
+    #yearlyTable th, #yearlyTable td { text-align: right; } /* Default align right for data */
+    #yearlyTable th:first-child, #yearlyTable td:first-child {
+      text-align: left; position: sticky; left: 0; background: var(--surface); z-index: 2; font-weight: 600; color: var(--text); border-right: 1px solid var(--border);
+    }
 
     #statusBar { display: none; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.2); border-radius: 8px; padding: 12px 16px; font-size: 14px; font-weight: 500; color: var(--green); margin-bottom: 16px; }
 
@@ -163,13 +170,6 @@
     input:checked + .slider:before { transform: translateX(20px); }
     body.dark-mode .slider { background-color: #334155; }
     body.dark-mode input:checked + .slider { background-color: var(--primary); }
-
-    /* Yearly Table CSS */
-    #yearlyTable th { color: var(--text); font-weight: 600; }
-    #yearlyTable th, #yearlyTable td { text-align: right; }
-    #yearlyTable th:first-child, #yearlyTable td:first-child {
-      text-align: left; position: sticky; left: 0; background: var(--surface); z-index: 2; font-weight: 600; color: var(--text); border-right: 1px solid var(--border);
-    }
 
   @media (max-width: 1200px) {
     .kpi-grid.row6 { grid-template-columns: repeat(3,1fr); }
@@ -432,6 +432,7 @@ let charts = {};
 
 function destroyCharts() { Object.values(charts).forEach(c => { if(c) c.destroy(); }); charts = {}; }
 function fmt(n) { if(n>=1000000) return (n/1000000).toFixed(1)+'M'; if(n>=1000) return (n/1000).toFixed(1)+'K'; return n.toLocaleString(); }
+
 function renderAll() { renderKPIs(); renderCharts(); renderYearlyTable(); renderTable(); }
 
 function renderKPIs() {
@@ -738,14 +739,6 @@ function renderCharts() {
   }
 }
 
-function objBadge(obj) {
-  if (obj==='Page Like') return `<span class="badge badge-blue">${obj}</span>`;
-  if (obj==='Awareness') return `<span class="badge badge-green">${obj}</span>`;
-  if (obj==='Message') return `<span class="badge badge-purple">${obj}</span>`;
-  if (obj==='Engage') return `<span class="badge badge-amber">${obj}</span>`;
-  return `<span class="badge badge-amber">${obj}</span>`;
-}
-
 let currentSortCol = 'spend';
 let currentSortAsc = false;
 
@@ -776,48 +769,49 @@ window.switchTableTab = function(tab) {
 
 function renderYearlyTable() {
   const d = filteredData;
-  if (!d || d.length === 0) {
-    document.getElementById('yearlyTableHead').innerHTML = '';
-    document.getElementById('yearlyTableBody').innerHTML = '<tr><td colspan="2" style="text-align:center;">ไม่มีข้อมูล</td></tr>';
-    return;
-  }
 
-  // 1. จัดกลุ่มข้อมูลตามเดือน
+  // 1. จัดกลุ่มข้อมูลตามเดือน และกำหนดเดือนแบบ Fixed 12 เดือน + Total
   const monthGroups = {};
-  const monthOrder = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  const monthOrder = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December", "Total"];
   
-  d.forEach(r => {
-    const m = r.month || 'Total';
-    if (!monthGroups[m]) {
-      monthGroups[m] = { spend: 0, reach: 0, impressions: 0, engagements: 0, messages: 0 };
-    }
-    monthGroups[m].spend += r.spend;
-    monthGroups[m].reach += r.reach;
-    monthGroups[m].impressions += r.impressions;
-    monthGroups[m].engagements += r.engagements;
-    monthGroups[m].messages += (r.messages || 0);
+  // สร้างโครงสร้างเปล่าสำหรับทุกๆ เดือน
+  monthOrder.forEach(m => {
+    monthGroups[m] = { spend: 0, reach: 0, impressions: 0, engagements: 0, messages: 0, fbLikes: 0, leads: 0 };
   });
 
-  // 2. เรียงลำดับเดือน (ซ่อน Total เพื่อให้เหมือนกราฟรายเดือนเป๊ะๆ)
-  const availableMonths = Object.keys(monthGroups).filter(m => m !== 'Total').sort((a, b) => {
-    let indexA = monthOrder.indexOf(a);
-    let indexB = monthOrder.indexOf(b);
-    if (indexA === -1) indexA = 999;
-    if (indexB === -1) indexB = 999;
-    return indexA - indexB;
+  // เติมข้อมูลลงในกลุ่มเดือน
+  d.forEach(r => {
+    // ตรวจสอบว่า record มี field month หรือไม่ (ตัวเล็ก/ตัวใหญ่) หรือมีใน dropdown หรือไม่
+    const m = r.month || 'Total';
+    
+    // ถ้าพบเดือนในโครงสร้าง เราก็สะสมค่าลงไป, ถ้าไม่ใช่ชื่อเดือนปกติ(เช่น Total) ก็ให้บวกเข้า Total
+    if (monthGroups[m]) {
+       monthGroups[m].spend += r.spend;
+       monthGroups[m].reach += r.reach;
+       monthGroups[m].impressions += r.impressions;
+       monthGroups[m].engagements += r.engagements;
+       monthGroups[m].messages += (r.messages || 0);
+       monthGroups[m].fbLikes += r.fbLikes;
+       monthGroups[m].leads += (r.leads || 0);
+    }
   });
+
+  // 2. รายชื่อเดือนที่จะแสดง (เอาทั้งหมดจาก monthOrder เรียงตามลำดับ)
+  // ใช้วิธี map จาก monthOrder ได้เลยเพื่อให้เรียงถูกต้องเสมอ
+  const displayMonths = monthOrder;
 
   // 3. สร้าง Thead
-  let theadHtml = `<tr><th>Metric</th>`;
-  availableMonths.forEach(m => {
+  let theadHtml = `<tr><th style="text-align: left;">Metric</th>`;
+  displayMonths.forEach(m => {
+    // สามารถย่อชื่อเดือนตรง Header ได้ถ้าต้องการประหยัดพื้นที่ เช่น m.substring(0,3)
     theadHtml += `<th>${m}</th>`;
   });
   theadHtml += `</tr>`;
   document.getElementById('yearlyTableHead').innerHTML = theadHtml;
 
   // 4. เตรียม Metric ตามรูปภาพ
-  const formatDec = (v) => v.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-  const formatNum = (v) => v.toLocaleString();
+  const formatDec = (v) => v === 0 ? '-' : v.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+  const formatNum = (v) => v === 0 ? '-' : v.toLocaleString();
 
   const metrics = [
     { key: 'spend', label: 'Spending (฿)', fmt: formatDec },
@@ -825,6 +819,8 @@ function renderYearlyTable() {
     { key: 'impressions', label: 'Impression', fmt: formatNum },
     { key: 'engagements', label: 'Post Engagement', fmt: formatNum },
     { key: 'messages', label: 'Message', fmt: formatNum },
+    { key: 'fbLikes', label: 'Page Like', fmt: formatNum },
+    { key: 'leads', label: 'Lead gen', fmt: formatNum },
     { key: 'frequency', label: 'Frequency', fmt: formatDec },
     { key: 'cpr', label: 'Cost per 1,000 Reach (CPR)', fmt: formatDec },
     { key: 'cpm', label: 'Cost per 1,000 impressions (CPM)', fmt: formatDec },
@@ -838,7 +834,7 @@ function renderYearlyTable() {
     tbodyHtml += `<tr>`;
     tbodyHtml += `<td>${metric.label}</td>`;
     
-    availableMonths.forEach(m => {
+    displayMonths.forEach(m => {
       const data = monthGroups[m];
       let val = 0;
       
@@ -847,13 +843,17 @@ function renderYearlyTable() {
       else if (metric.key === 'impressions') val = data.impressions;
       else if (metric.key === 'engagements') val = data.engagements;
       else if (metric.key === 'messages') val = data.messages;
+      else if (metric.key === 'fbLikes') val = data.fbLikes;
+      else if (metric.key === 'leads') val = data.leads;
       else if (metric.key === 'frequency') val = data.reach > 0 ? (data.impressions / data.reach) : 0;
       else if (metric.key === 'cpr') val = data.reach > 0 ? (data.spend / data.reach) * 1000 : 0;
       else if (metric.key === 'cpm') val = data.impressions > 0 ? (data.spend / data.impressions) * 1000 : 0;
       else if (metric.key === 'cpe') val = data.engagements > 0 ? (data.spend / data.engagements) : 0;
       else if (metric.key === 'cpmsg') val = data.messages > 0 ? (data.spend / data.messages) : 0;
 
-      tbodyHtml += `<td class="num">${metric.fmt(val)}</td>`;
+      // ไฮไลต์เซลล์ที่เป็นตัวเลข
+      const cellClass = ['spend','frequency','cpr','cpm','cpe','cpmsg'].includes(metric.key) ? 'cost-cell' : 'num';
+      tbodyHtml += `<td class="${cellClass}">${metric.fmt(val)}</td>`;
     });
     
     tbodyHtml += `</tr>`;
