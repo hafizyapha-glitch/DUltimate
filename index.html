@@ -768,7 +768,15 @@ window.switchTableTab = function(tab) {
 };
 
 function renderYearlyTable() {
-  const d = filteredData;
+  // 📌 ให้ตาราง Yearly กรองเฉพาะ Campaign และ Objective แต่เพิกเฉย Filter เดือน
+  const campaign = document.getElementById('filterCampaign').value;
+  const objective = document.getElementById('filterObjective').value;
+
+  const d = allData.filter(r => {
+    if (campaign && r.campaign !== campaign) return false;
+    if (objective && r.objective !== objective) return false;
+    return true;
+  });
 
   // 1. จัดกลุ่มข้อมูลตามเดือน และกำหนดเดือนแบบ Fixed 12 เดือน + Total
   const monthGroups = {};
@@ -781,10 +789,14 @@ function renderYearlyTable() {
 
   // เติมข้อมูลลงในกลุ่มเดือน
   d.forEach(r => {
-    // ตรวจสอบว่า record มี field month หรือไม่ (ตัวเล็ก/ตัวใหญ่) หรือมีใน dropdown หรือไม่
-    const m = r.month || 'Total';
+    let m = r.month ? r.month.trim() : 'Total';
+    // ทำให้เดือนขึ้นต้นด้วยตัวพิมพ์ใหญ่เสมอ เพื่อให้ตรงกับ Key ของ monthGroups
+    if (m.toLowerCase() !== 'total') {
+        m = m.charAt(0).toUpperCase() + m.slice(1).toLowerCase();
+    } else {
+        m = 'Total';
+    }
     
-    // ถ้าพบเดือนในโครงสร้าง เราก็สะสมค่าลงไป, ถ้าไม่ใช่ชื่อเดือนปกติ(เช่น Total) ก็ให้บวกเข้า Total
     if (monthGroups[m]) {
        monthGroups[m].spend += r.spend;
        monthGroups[m].reach += r.reach;
@@ -796,14 +808,12 @@ function renderYearlyTable() {
     }
   });
 
-  // 2. รายชื่อเดือนที่จะแสดง (เอาทั้งหมดจาก monthOrder เรียงตามลำดับ)
-  // ใช้วิธี map จาก monthOrder ได้เลยเพื่อให้เรียงถูกต้องเสมอ
+  // 2. รายชื่อเดือนที่จะแสดง (12 เดือน + Total เสมอ)
   const displayMonths = monthOrder;
 
   // 3. สร้าง Thead
   let theadHtml = `<tr><th style="text-align: left;">Metric</th>`;
   displayMonths.forEach(m => {
-    // สามารถย่อชื่อเดือนตรง Header ได้ถ้าต้องการประหยัดพื้นที่ เช่น m.substring(0,3)
     theadHtml += `<th>${m}</th>`;
   });
   theadHtml += `</tr>`;
@@ -832,7 +842,7 @@ function renderYearlyTable() {
   let tbodyHtml = '';
   metrics.forEach(metric => {
     tbodyHtml += `<tr>`;
-    tbodyHtml += `<td>${metric.label}</td>`;
+    tbodyHtml += `<td style="text-align: left;">${metric.label}</td>`;
     
     displayMonths.forEach(m => {
       const data = monthGroups[m];
@@ -851,7 +861,6 @@ function renderYearlyTable() {
       else if (metric.key === 'cpe') val = data.engagements > 0 ? (data.spend / data.engagements) : 0;
       else if (metric.key === 'cpmsg') val = data.messages > 0 ? (data.spend / data.messages) : 0;
 
-      // ไฮไลต์เซลล์ที่เป็นตัวเลข
       const cellClass = ['spend','frequency','cpr','cpm','cpe','cpmsg'].includes(metric.key) ? 'cost-cell' : 'num';
       tbodyHtml += `<td class="${cellClass}">${metric.fmt(val)}</td>`;
     });
@@ -946,9 +955,13 @@ function populateFilters() {
 function applyFilters() {
   const campaign = document.getElementById('filterCampaign').value;
   const objective = document.getElementById('filterObjective').value;
+  const month = document.getElementById('filterMonth').value;
+
   filteredData = allData.filter(r=>{
     if (campaign && r.campaign !== campaign) return false;
     if (objective && r.objective !== objective) return false;
+    // 📌 กรองเดือนสำหรับ Dashboard ทั่วไป (แต่จะไม่กระทบ Yearly Table เพราะ Yearly ใช้ allData ตรงๆ)
+    if (month && r.month && r.month.toLowerCase() !== month.toLowerCase() && r.month !== 'Total') return false;
     return true;
   });
   renderAll();
@@ -957,15 +970,25 @@ function applyFilters() {
 function clearFilters() {
   document.getElementById('filterCampaign').value = '';
   document.getElementById('filterObjective').value = '';
-  // เราไม่เคลียร์ filterMonth เพื่อให้แสดงข้อมูลของเดือนที่โหลดอยู่ปัจจุบัน
-  filteredData = [...allData];
-  renderAll();
+  // ไม่เคลียร์ filterMonth เพื่อให้อยู่ในเดือนปัจจุบัน
+  applyFilters();
 }
 
 // ─── การดึงไฟล์ด้วย Dropdown เดือน ─────────────────────────────
 async function loadMonthData() {
   const month = document.getElementById('filterMonth').value;
-  if (!month) return; // ถ้าไม่ได้เลือกให้หยุด
+  if (!month) {
+    applyFilters();
+    return; 
+  }
+
+  // เช็คว่ามีข้อมูล Master (หลายเดือน) โหลดอยู่แล้วหรือไม่
+  // ถ้ามี หรือเป็นการอัปโหลดไฟล์รวมมาเอง ให้ใช้ applyFilters กรองข้อมูลในหน่วยความจำแทน (ไม่ดึงไฟล์ใหม่)
+  const distinctMonths = [...new Set(allData.map(r => r.month).filter(m => m && m !== 'Total'))];
+  if (window.isMasterDataLoaded || distinctMonths.length > 1) {
+    applyFilters();
+    return;
+  }
 
   showStatus(`กำลังดึงข้อมูลของเดือน ${month}...`);
 
@@ -1017,6 +1040,9 @@ document.getElementById('fileInput')?.addEventListener('change', function(e){
   const file = e.target.files[0]; if (!file) return;
   const ext = file.name.split('.').pop().toLowerCase();
   
+  // 📌 กำหนด flag เพื่อไม่ให้ dropdown เดือนไปเขียนทับข้อมูลเวลาเลือกเดือน
+  window.isMasterDataLoaded = true;
+
   // Reset month filter if manually uploading a file
   const monthSelect = document.getElementById('filterMonth');
   if (monthSelect) monthSelect.value = "";
@@ -1066,7 +1092,7 @@ function loadData(rows) {
 
     populateFilters();
     renderAdLinkInputs();
-    renderAll();
+    applyFilters(); // 📌 เปลี่ยนจาก renderAll() เป็น applyFilters() เพื่อให้ตัวกรองเริ่มทำงานทันที
     
     // ให้แสดง Status Bar สีเขียวเป็นเวลาสั้นๆ โดยไม่บล็อกการทำงานอื่น
     const msg = `✅ โหลดข้อมูลสำเร็จ: ${allData.length} รายการ`;
